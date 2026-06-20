@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import type { Repository } from "@/types/github"
+import { inferLanguage } from "@/lib/utils"
 
 interface UseGitHubRepositoriesResult {
   repositories: Repository[] | null
@@ -52,7 +53,14 @@ export function useGitHubRepositories(username: string): UseGitHubRepositoriesRe
         )
         if (!r.ok) throw new Error(`GitHub API ${r.status}: ${r.statusText}`)
         fetched = await r.json()
-        repos.push(...fetched.filter((repo: Repository) => !repo.private))
+        repos.push(
+          ...fetched
+            .filter((repo: Repository) => !repo.private)
+            .map((repo: Repository) => ({
+              ...repo,
+              language: inferLanguage(repo),
+            }))
+        )
         page++
       } while (fetched.length === perPageMax)
 

@@ -57,7 +57,7 @@ const LANGUAGE_COLORS: Record<string, string> = {
   Vue: "#41B883",
   Dockerfile: "#384d54",
   Markdown: "#083fa1",
-  Lua: "#000080",
+  Lua: "#5270C0",
   Unknown: "#858585",
 }
 
@@ -69,4 +69,50 @@ const LANGUAGE_COLORS: Record<string, string> = {
 export function getLanguageColor(language: string | null): string {
   if (!language) return LANGUAGE_COLORS.Unknown
   return LANGUAGE_COLORS[language] || LANGUAGE_COLORS.Unknown
+}
+
+/**
+ * Infer language from repo metadata when GitHub API returns null
+ * Checks topics and description for known patterns
+ */
+const LANGUAGE_PATTERNS: [RegExp, string][] = [
+  [/fivem|qbcore|esx|qb-input|rpserver/i, "Lua"],
+  [/lua/i, "Lua"],
+  [/dockerfile/i, "Dockerfile"],
+  [/rust/i, "Rust"],
+  [/python/i, "Python"],
+  [/typescript/i, "TypeScript"],
+  [/javascript|js/i, "JavaScript"],
+  [/html/i, "HTML"],
+  [/css/i, "CSS"],
+  [/go\b|golang/i, "Go"],
+  [/c#|csharp/i, "C#"],
+  [/c\+\+|cpp/i, "C++"],
+]
+
+export function inferLanguage(repo: { language?: string | null; topics?: string[]; description?: string | null; name: string }): string | null {
+  // If GitHub already detected a language, use it
+  if (repo.language) return repo.language
+
+  // Check topics first
+  if (repo.topics) {
+    const topicStr = repo.topics.join(" ")
+    for (const [pattern, lang] of LANGUAGE_PATTERNS) {
+      if (pattern.test(topicStr)) return lang
+    }
+  }
+
+  // Check description
+  if (repo.description) {
+    for (const [pattern, lang] of LANGUAGE_PATTERNS) {
+      if (pattern.test(repo.description)) return lang
+    }
+  }
+
+  // Check repo name
+  for (const [pattern, lang] of LANGUAGE_PATTERNS) {
+    if (pattern.test(repo.name)) return lang
+  }
+
+  return null
 }
