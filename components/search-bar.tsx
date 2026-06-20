@@ -8,7 +8,7 @@ interface SearchBarProps {
   onSearch: (term: string) => void
   onSort: (key: "created" | "stars" | "forks" | "updated" | "name") => void
   sortKey: string
-  inputRef?: React.RefObject<HTMLInputElement>
+  inputRef?: React.RefObject<HTMLInputElement | null>
 }
 
 const SORT_OPTIONS = [

@@ -10,15 +10,6 @@ import {
   GitFork,
   Star,
 } from "lucide-react"
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from "recharts"
 
 interface StatisticsSectionProps {
   repositories: Repository[]
@@ -35,15 +26,12 @@ export default function StatisticsSection({ repositories }: StatisticsSectionPro
     return acc
   }, {})
 
+  const totalRepos = repositories.length
   const sortedLangs = Object.entries(languageStats)
     .sort(([, a], [, b]) => b.count - a.count)
     .slice(0, 10)
 
-  const chartData = sortedLangs.map(([name, stats]) => ({
-    name,
-    count: stats.count,
-    fill: stats.color,
-  }))
+  const maxCount = sortedLangs[0]?.[1].count || 1
 
   // Top stats
   const totalStars = repositories.reduce((sum, repo) => sum + repo.stargazers_count, 0)
@@ -66,8 +54,14 @@ export default function StatisticsSection({ repositories }: StatisticsSectionPro
     >
       {/* Stat cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {statCards.map((card) => (
-          <div key={card.label} className="bg-card rounded-xl border border-border p-4">
+        {statCards.map((card, i) => (
+          <motion.div
+            key={card.label}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 + i * 0.05, duration: 0.3 }}
+            className="bg-card rounded-xl border border-border p-4"
+          >
             <div className="flex items-center gap-3">
               <div className={`p-2 rounded-lg bg-secondary ${card.color}`}>
                 <card.icon className="w-4 h-4" />
@@ -77,47 +71,82 @@ export default function StatisticsSection({ repositories }: StatisticsSectionPro
                 <p className="text-xl font-bold">{card.value}</p>
               </div>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
 
-      {/* Language chart */}
-      {chartData.length > 0 && (
-        <div className="bg-card rounded-xl border border-border p-6">
+      {/* Language distribution */}
+      {sortedLangs.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+          className="bg-card rounded-xl border border-border p-6"
+        >
           <div className="flex items-center gap-2 mb-6">
             <BarChart3 className="w-5 h-5 text-primary" />
             <h3 className="font-semibold">Languages</h3>
+            <span className="text-xs text-muted-foreground ml-auto">
+              {totalRepos} repo{totalRepos !== 1 ? "s" : ""} · {sortedLangs.length} language{sortedLangs.length !== 1 ? "s" : ""}
+            </span>
           </div>
-          <div className="h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} layout="vertical" margin={{ left: 80 }}>
-                <XAxis type="number" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  tick={{ fontSize: 12 }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={75}
-                />
-                <Tooltip
-                  cursor={{ fill: "hsl(var(--muted))" }}
-                  contentStyle={{
-                    background: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "var(--radius)",
-                    fontSize: 13,
+
+          {/* Language bars */}
+          <div className="space-y-3">
+            {sortedLangs.map(([name, stats], i) => {
+              const percentage = ((stats.count / totalRepos) * 100).toFixed(1)
+              return (
+                <motion.div
+                  key={name}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.25 + i * 0.03, duration: 0.3 }}
+                  className="group"
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span
+                        className="w-3 h-3 rounded-sm shrink-0 ring-1 ring-black/10 dark:ring-white/10"
+                        style={{ backgroundColor: stats.color }}
+                      />
+                      <span className="text-sm font-medium truncate">{name}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground shrink-0 ml-4">
+                      <span className="font-semibold tabular-nums">{stats.count}</span>
+                      <span className="w-12 text-right tabular-nums">{percentage}%</span>
+                    </div>
+                  </div>
+                  <div className="h-2 rounded-full bg-secondary overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(stats.count / maxCount) * 100}%` }}
+                      transition={{ delay: 0.3 + i * 0.03, duration: 0.5, ease: "easeOut" }}
+                      className="h-full rounded-full transition-all duration-500 group-hover:opacity-80"
+                      style={{ backgroundColor: stats.color }}
+                    />
+                  </div>
+                </motion.div>
+              )
+            })}
+          </div>
+
+          {/* Multi-color bar — GitHub-style summary */}
+          {sortedLangs.length > 1 && (
+            <div className="mt-6 h-2 rounded-full overflow-hidden flex">
+              {sortedLangs.map(([name, stats]) => (
+                <div
+                  key={name}
+                  className="h-full first:rounded-l-full last:rounded-r-full transition-all duration-300 hover:opacity-80"
+                  style={{
+                    backgroundColor: stats.color,
+                    width: `${(stats.count / totalRepos) * 100}%`,
                   }}
+                  title={`${name}: ${stats.count} (${((stats.count / totalRepos) * 100).toFixed(1)}%)`}
                 />
-                <Bar dataKey="count" radius={[0, 4, 4, 0]} maxBarSize={20}>
-                  {chartData.map((entry, i) => (
-                    <Cell key={`cell-${i}`} fill={entry.fill} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
       )}
     </motion.div>
   )
