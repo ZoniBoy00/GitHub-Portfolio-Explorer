@@ -1,44 +1,42 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Search } from "lucide-react"
 
 interface UsernameFormProps {
-  defaultUsername: string
-  onSubmit: (username: string) => void
+  username: string
+  onUsernameChange: (username: string) => void
   isLoading: boolean
 }
 
-export default function UsernameForm({ defaultUsername, onSubmit, isLoading }: UsernameFormProps) {
-  const [username, setUsername] = useState(defaultUsername)
+export default function UsernameForm({ username, onUsernameChange, isLoading }: UsernameFormProps) {
+  const [inputValue, setInputValue] = useState(username)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (username.trim() && !isLoading) {
-      onSubmit(username.trim())
+    const trimmed = inputValue.trim()
+    if (trimmed && trimmed !== username) {
+      onUsernameChange(trimmed)
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex items-center gap-2">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <input
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder="GitHub username"
-          className="py-2 pl-10 pr-4 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all w-[180px]"
-        />
-      </div>
+    <form onSubmit={handleSubmit} className="relative">
+      <input
+        type="text"
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        placeholder="GitHub username..."
+        disabled={isLoading}
+        className="h-9 w-36 md:w-44 pl-3 pr-8 rounded-lg bg-secondary border border-border text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all disabled:opacity-50"
+      />
       <button
         type="submit"
-        disabled={isLoading || !username.trim()}
-        className="py-2 px-4 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+        disabled={isLoading}
+        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
       >
-        {isLoading ? "Loading..." : "Explore"}
+        <Search className="w-3.5 h-3.5" />
       </button>
     </form>
   )

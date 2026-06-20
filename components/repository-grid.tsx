@@ -1,6 +1,7 @@
 import type { Repository } from "@/types/github"
 import RepositoryCard from "./repository-card"
-import { AlertCircle, Plus } from "lucide-react"
+import { motion } from "framer-motion"
+import { Inbox } from "lucide-react"
 
 interface RepositoryGridProps {
   repositories: Repository[]
@@ -13,7 +14,7 @@ export default function RepositoryGrid({ repositories, loading, error }: Reposit
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
         {[...Array(6)].map((_, i) => (
-          <div key={i} className="h-[250px] bg-card rounded-xl border border-border animate-pulse" />
+          <div key={i} className="h-[220px] rounded-xl bg-card border border-border animate-pulse" />
         ))}
       </div>
     )
@@ -21,29 +22,42 @@ export default function RepositoryGrid({ repositories, loading, error }: Reposit
 
   if (error) {
     return (
-      <div className="text-center py-12 bg-card rounded-xl border border-border">
-        <h3 className="text-xl font-semibold mb-4">Error loading repositories</h3>
-        <p className="text-muted-foreground mb-6">{error.message}</p>
-        <AlertCircle className="w-16 h-16 mx-auto text-primary/50" />
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center py-16 bg-card rounded-xl border border-border"
+      >
+        <h3 className="text-xl font-semibold mb-2">Error loading repositories</h3>
+        <p className="text-muted-foreground mb-6 max-w-md mx-auto">{error.message}</p>
+        <div className="text-4xl text-primary/30">:(</div>
+      </motion.div>
     )
   }
 
-  if (repositories.length === 0) {
+  if (!repositories || repositories.length === 0) {
     return (
-      <div className="text-center py-12 bg-card rounded-xl border border-border">
-        <h3 className="text-xl font-semibold mb-4">No repositories found</h3>
-        <p className="text-muted-foreground mb-6">Try adjusting your search criteria or language filters</p>
-        <Plus className="w-16 h-16 mx-auto text-muted-foreground/50" />
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center py-16 bg-card rounded-xl border border-border"
+      >
+        <Inbox className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+        <h3 className="text-xl font-semibold mb-2">No repositories found</h3>
+        <p className="text-muted-foreground">Try adjusting your search or filters</p>
+      </motion.div>
     )
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-      {repositories.map((repo) => (
-        <RepositoryCard key={repo.id} repository={repo} />
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8"
+    >
+      {repositories.map((repo, i) => (
+        <RepositoryCard key={repo.id} repository={repo} index={i} />
       ))}
-    </div>
+    </motion.div>
   )
 }

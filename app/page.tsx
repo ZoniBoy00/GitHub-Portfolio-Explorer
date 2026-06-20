@@ -8,7 +8,6 @@ import LanguageFilter from "@/components/language-filter"
 import RepositoryGrid from "@/components/repository-grid"
 import StatisticsSection from "@/components/statistics-section"
 import LoadingScreen from "@/components/loading-screen"
-import Pagination from "@/components/pagination"
 import UserProfile from "@/components/user-profile"
 import { useGitHubRepositories } from "@/hooks/use-github-repositories"
 import { useGitHubUser } from "@/hooks/use-github-user"
@@ -20,9 +19,6 @@ export default function Home() {
     repositories,
     loading: reposLoading,
     error: reposError,
-    totalPages,
-    currentPage,
-    setCurrentPage,
   } = useGitHubRepositories(username)
   const { user, loading: userLoading, error: userError, rateLimit } = useGitHubUser(username)
 
@@ -33,7 +29,6 @@ export default function Home() {
 
   const searchInputRef = useRef<HTMLInputElement>(null)
 
-  // Determine if any loading is happening
   const isLoading = reposLoading || userLoading
 
   // Save last visited username to localStorage
@@ -48,80 +43,59 @@ export default function Home() {
     localStorage.setItem("github-explorer-username", username)
   }, [username])
 
-  // Memoize filtered repositories to prevent unnecessary recalculations
+  // Memoize filtered + sorted repositories
   const filteredRepos = useMemo(() => {
     if (!repositories) return []
 
     let filtered = [...repositories]
 
-    // Filter out archived repositories if needed
     if (!showArchived) {
       filtered = filtered.filter((repo) => !repo.archived)
     }
 
-    // Apply search filter
     if (searchTerm) {
+      const term = searchTerm.toLowerCase()
       filtered = filtered.filter(
         (repo) =>
-          repo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (repo.description && repo.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          (repo.topics && repo.topics.some((topic) => topic.toLowerCase().includes(searchTerm.toLowerCase()))),
+          repo.name.toLowerCase().includes(term) ||
+          (repo.description && repo.description.toLowerCase().includes(term)) ||
+          (repo.topics && repo.topics.some((topic) => topic.toLowerCase().includes(term))),
       )
     }
 
-    // Apply language filter
     if (selectedLanguages.size > 0) {
       filtered = filtered.filter((repo) => repo.language && selectedLanguages.has(repo.language))
     }
 
-    // Apply sorting
     return filtered.sort((a, b) => {
       switch (sortKey) {
-        case "stars":
-          return b.stargazers_count - a.stargazers_count
-        case "forks":
-          return b.forks_count - a.forks_count
-        case "updated":
-          return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-        case "name":
-          return a.name.localeCompare(b.name)
+        case "stars": return b.stargazers_count - a.stargazers_count
+        case "forks": return b.forks_count - a.forks_count
+        case "updated": return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+        case "name": return a.name.localeCompare(b.name)
         case "created":
-        default:
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        default: return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       }
     })
   }, [repositories, searchTerm, sortKey, selectedLanguages, showArchived])
 
-  // Memoize handler functions to prevent unnecessary re-renders
-  const handleSearch = useCallback((term: string) => {
-    setSearchTerm(term)
-  }, [])
-
-  const handleSort = useCallback((key: "created" | "stars" | "forks" | "updated" | "name") => {
-    setSortKey(key)
-  }, [])
+  const handleSearch = useCallback((term: string) => setSearchTerm(term), [])
+  const handleSort = useCallback((key: "created" | "stars" | "forks" | "updated" | "name") => setSortKey(key), [])
 
   const handleLanguageToggle = useCallback((language: string) => {
     setSelectedLanguages((prev) => {
-      const newSelectedLanguages = new Set(prev)
-      if (newSelectedLanguages.has(language)) {
-        newSelectedLanguages.delete(language)
-      } else {
-        newSelectedLanguages.add(language)
-      }
-      return newSelectedLanguages
+      const next = new Set(prev)
+      next.has(language) ? next.delete(language) : next.add(language)
+      return next
     })
   }, [])
 
-  const clearLanguageFilters = useCallback(() => {
-    setSelectedLanguages(new Set())
-  }, [])
+  const clearLanguageFilters = useCallback(() => setSelectedLanguages(new Set()), [])
 
   const handleUsernameChange = useCallback(
     (newUsername: string) => {
       if (newUsername !== username) {
         setUsername(newUsername)
-        // Reset filters when changing user
         setSearchTerm("")
         setSelectedLanguages(new Set())
       }
@@ -129,31 +103,10 @@ export default function Home() {
     [username],
   )
 
-  const handlePageChange = useCallback(
-    (page: number) => {
-      if (page < 1 || page > totalPages || page === currentPage) return
+  const toggleArchivedVisibility = useCallback(() => setShowArchived((p) => !p), [])
+  const focusSearchInput = useCallback(() => searchInputRef.current?.focus(), [])
 
-      // Scroll to top when changing pages
-      window.scrollTo({ top: 0, behavior: "smooth" })
-      setCurrentPage(page)
-    },
-    [setCurrentPage, totalPages, currentPage],
-  )
-
-  const toggleArchivedVisibility = useCallback(() => {
-    setShowArchived((prev) => !prev)
-  }, [])
-
-  const focusSearchInput = useCallback(() => {
-    if (searchInputRef.current) {
-      searchInputRef.current.focus()
-    }
-  }, [])
-
-  // Set up keyboard shortcuts
   useKeyboardShortcuts({
-    onNextPage: () => handlePageChange(currentPage + 1),
-    onPrevPage: () => handlePageChange(currentPage - 1),
     onSearch: focusSearchInput,
     disabled: isLoading,
   })
@@ -186,13 +139,6 @@ export default function Home() {
         <StatisticsSection repositories={filteredRepos} />
 
         <RepositoryGrid repositories={filteredRepos} loading={reposLoading} error={reposError} />
-
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          isLoading={reposLoading}
-          onPageChange={handlePageChange}
-        />
       </main>
 
       <Footer />

@@ -1,116 +1,102 @@
+import { motion } from "framer-motion"
 import type { Repository } from "@/types/github"
 import { getLanguageColor, formatDate } from "@/lib/utils"
-import { GitFork, Star, ExternalLink, GitBranch, Tag, Eye, AlertTriangle, Calendar } from "lucide-react"
+import { Star, GitFork, Eye, Calendar, ExternalLink } from "lucide-react"
 
 interface RepositoryCardProps {
   repository: Repository
+  index: number
 }
 
-export default function RepositoryCard({ repository }: RepositoryCardProps) {
-  // Format dates
-  const createdDate = formatDate(repository.created_at)
-
+export default function RepositoryCard({ repository, index }: RepositoryCardProps) {
   return (
-    <div
-      className={`bg-card rounded-xl p-6 shadow-md border border-border transition-all hover:-translate-y-1 hover:shadow-lg flex flex-col h-full ${
-        repository.fork ? "border-l-4 border-l-blue-400" : repository.archived ? "border-l-4 border-l-amber-400" : ""
-      }`}
+    <motion.a
+      href={repository.html_url}
+      target="_blank"
+      rel="noopener noreferrer"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: index * 0.03 }}
+      className="group block bg-card rounded-xl border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 overflow-hidden"
     >
-      <div className="mb-3 flex justify-between items-start">
-        <h3 className="text-lg font-semibold text-primary flex items-center gap-2 mb-2">
-          {repository.fork ? <GitFork className="w-4 h-4" /> : <GitBranch className="w-4 h-4" />}
-          {repository.name}
-        </h3>
-        <div className="flex gap-1">
-          {repository.archived && (
-            <span
-              className="bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 text-xs px-2 py-0.5 rounded-full flex items-center gap-1"
-              title="This repository is archived and read-only"
-            >
-              <AlertTriangle className="w-3 h-3" />
-              Archived
-            </span>
-          )}
-          {repository.private && (
-            <span
-              className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 text-xs px-2 py-0.5 rounded-full"
-              title="This repository is private"
-            >
-              Private
-            </span>
-          )}
+      <div className="p-5 flex flex-col h-full">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <div className="min-w-0">
+            <h3 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+              {repository.name}
+            </h3>
+            {repository.description && (
+              <p className="text-sm text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
+                {repository.description}
+              </p>
+            )}
+          </div>
+          <ExternalLink className="w-4 h-4 text-muted-foreground shrink-0 opacity-0 group-hover:opacity-100 transition-opacity mt-1" />
         </div>
-      </div>
 
-      <p className="text-muted-foreground mb-4 flex-grow">{repository.description || "No description available."}</p>
-
-      {repository.language && (
-        <div className="flex items-center gap-1 mb-3">
-          <span className="w-3 h-3 rounded-full" style={{ backgroundColor: getLanguageColor(repository.language) }} />
-          <span className="text-sm">{repository.language}</span>
-        </div>
-      )}
-
-      {repository.topics && repository.topics.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-3">
-          {repository.topics.slice(0, 3).map((topic) => (
-            <span
-              key={topic}
-              className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full"
-            >
-              <Tag className="w-3 h-3" />
-              {topic}
-            </span>
-          ))}
-          {repository.topics.length > 3 && (
-            <span className="text-xs text-muted-foreground">+{repository.topics.length - 3} more</span>
-          )}
-        </div>
-      )}
-
-      <div className="flex gap-4 mb-4 flex-wrap">
-        <span className="flex items-center gap-1 text-sm text-muted-foreground" title="Stars">
-          <Star className="w-4 h-4" />
-          {repository.stargazers_count}
-        </span>
-        <span className="flex items-center gap-1 text-sm text-muted-foreground" title="Forks">
-          <GitFork className="w-4 h-4" />
-          {repository.forks_count}
-        </span>
-        <span className="flex items-center gap-1 text-sm text-muted-foreground" title="Watchers">
-          <Eye className="w-4 h-4" />
-          {repository.watchers_count}
-        </span>
-        <span className="flex items-center gap-1 text-sm text-muted-foreground" title="Publication date">
-          <Calendar className="w-4 h-4" />
-          Published {createdDate}
-        </span>
-      </div>
-
-      <div className="flex gap-2 mt-auto pt-4">
-        <a
-          href={repository.html_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 text-primary font-medium transition-colors hover:text-primary/80 hover:translate-x-1"
-        >
-          View Repository
-          <ExternalLink className="w-4 h-4" />
-        </a>
-
-        {repository.homepage && (
-          <a
-            href={repository.homepage}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors ml-auto"
-            title="Visit project homepage"
-          >
-            <span className="hidden sm:inline">Homepage</span>
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
+        {/* Topics */}
+        {repository.topics && repository.topics.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {repository.topics.slice(0, 4).map((topic) => (
+              <span
+                key={topic}
+                className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium"
+              >
+                {topic}
+              </span>
+            ))}
+            {repository.topics.length > 4 && (
+              <span className="text-[11px] px-2 py-0.5 text-muted-foreground">
+                +{repository.topics.length - 4}
+              </span>
+            )}
+          </div>
         )}
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Language bar */}
+        {repository.language && (
+          <div className="mb-3">
+            <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: "100%",
+                  backgroundColor: getLanguageColor(repository.language),
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Footer stats */}
+        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          {repository.language && (
+            <div className="flex items-center gap-1.5">
+              <span
+                className="w-2.5 h-2.5 rounded-full shrink-0"
+                style={{ backgroundColor: getLanguageColor(repository.language) }}
+              />
+              <span>{repository.language}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-1.5">
+            <Star className="w-3.5 h-3.5" />
+            <span>{repository.stargazers_count}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <GitFork className="w-3.5 h-3.5" />
+            <span>{repository.forks_count}</span>
+          </div>
+          <div className="flex items-center gap-1.5 ml-auto">
+            <Calendar className="w-3.5 h-3.5" />
+            <span>{formatDate(repository.created_at)}</span>
+          </div>
+        </div>
       </div>
-    </div>
+    </motion.a>
   )
 }
