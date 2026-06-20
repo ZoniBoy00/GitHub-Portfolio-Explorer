@@ -1,7 +1,7 @@
 import { motion } from "framer-motion"
 import type { Repository } from "@/types/github"
 import { getLanguageColor, formatDate } from "@/lib/utils"
-import { Star, GitFork, Eye, Calendar, ExternalLink } from "lucide-react"
+import { Star, GitFork, GitBranch, Eye, Calendar, ExternalLink, Archive } from "lucide-react"
 
 interface RepositoryCardProps {
   repository: Repository
@@ -9,6 +9,16 @@ interface RepositoryCardProps {
 }
 
 export default function RepositoryCard({ repository, index }: RepositoryCardProps) {
+  const isFork = repository.fork === true
+  const isArchived = repository.archived === true
+
+  // Border color: fork -> blue, archived -> amber, otherwise default
+  const borderClass = isFork
+    ? "border-l-4 border-l-blue-400"
+    : isArchived
+      ? "border-l-4 border-l-amber-400"
+      : ""
+
   return (
     <motion.a
       href={repository.html_url}
@@ -17,7 +27,7 @@ export default function RepositoryCard({ repository, index }: RepositoryCardProp
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.03 }}
-      className="group block bg-card rounded-xl border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 overflow-hidden"
+      className={`group block bg-card rounded-xl border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 overflow-hidden ${borderClass}`}
     >
       <div className="p-5 flex flex-col h-full">
         {/* Header */}
@@ -34,6 +44,50 @@ export default function RepositoryCard({ repository, index }: RepositoryCardProp
           </div>
           <ExternalLink className="w-4 h-4 text-muted-foreground shrink-0 opacity-0 group-hover:opacity-100 transition-opacity mt-1" />
         </div>
+
+        {/* Fork indicator & badges */}
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+          {isFork ? (
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-500 dark:text-blue-400">
+              <GitFork className="w-3.5 h-3.5" />
+              Forked
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+              <GitBranch className="w-3.5 h-3.5" />
+              Source
+            </span>
+          )}
+
+          {isArchived && (
+            <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              <Archive className="w-3 h-3" />
+              Archived
+            </span>
+          )}
+
+          {repository.private && (
+            <span className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full bg-red-500/10 text-red-500">
+              Private
+            </span>
+          )}
+        </div>
+
+        {/* Parent repo link */}
+        {isFork && repository.parent && (
+          <div className="mb-3 text-xs text-muted-foreground">
+            Forked from{" "}
+            <a
+              href={repository.parent.html_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline font-medium"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {repository.parent.full_name}
+            </a>
+          </div>
+        )}
 
         {/* Topics */}
         {repository.topics && repository.topics.length > 0 && (

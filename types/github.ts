@@ -6,6 +6,10 @@ export interface Repository {
   html_url: string
   description: string | null
   fork: boolean
+  parent?: {
+    full_name: string
+    html_url: string
+  }
   url: string
   created_at: string
   updated_at: string
