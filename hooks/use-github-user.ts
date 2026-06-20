@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query"
 import type { GitHubUser } from "@/types/github"
 import { githubFetchWithRateLimit } from "@/lib/api"
-import type { RateLimitInfo } from "@/lib/api"
+import type { RateLimitInfo } from "@/types/github"
 
 interface UseGitHubUserResult {
   user: GitHubUser | null

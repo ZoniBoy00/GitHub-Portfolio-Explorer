@@ -2,6 +2,8 @@
  * GitHub API helper with optional token support for higher rate limits.
  */
 
+import type { RateLimitInfo } from "@/types/github"
+
 const GITHUB_TOKEN = process.env.NEXT_PUBLIC_GITHUB_TOKEN || ""
 
 const BASE_HEADERS: Record<string, string> = {
@@ -10,23 +12,6 @@ const BASE_HEADERS: Record<string, string> = {
 
 if (GITHUB_TOKEN) {
   BASE_HEADERS["Authorization"] = `Bearer ${GITHUB_TOKEN}`
-}
-
-export async function githubFetch<T>(url: string): Promise<T> {
-  const response = await fetch(url, { headers: BASE_HEADERS })
-
-  if (!response.ok) {
-    throw new Error(`GitHub API ${response.status}: ${response.statusText}`)
-  }
-
-  return response.json()
-}
-
-export interface RateLimitInfo {
-  limit: number
-  remaining: number
-  reset: number
-  used: number
 }
 
 export function extractRateLimit(headers: Headers): RateLimitInfo | null {
