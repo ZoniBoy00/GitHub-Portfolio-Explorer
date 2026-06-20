@@ -1,7 +1,7 @@
 import { motion } from "framer-motion"
 import type { Repository } from "@/types/github"
 import { getLanguageColor, formatDate } from "@/lib/utils"
-import { Star, GitFork, GitBranch, Eye, Calendar, ExternalLink, Archive } from "lucide-react"
+import { Star, GitFork, GitBranch, Calendar, ExternalLink, Archive } from "lucide-react"
 
 interface RepositoryCardProps {
   repository: Repository
@@ -77,15 +77,15 @@ export default function RepositoryCard({ repository, index }: RepositoryCardProp
         {isFork && repository.parent && (
           <div className="mb-3 text-xs text-muted-foreground">
             Forked from{" "}
-            <a
-              href={repository.parent.html_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline font-medium"
-              onClick={(e) => e.stopPropagation()}
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                window.open(repository.parent!.html_url, "_blank", "noopener noreferrer")
+              }}
+              className="text-primary hover:underline font-medium inline cursor-pointer"
             >
               {repository.parent.full_name}
-            </a>
+            </button>
           </div>
         )}
 
